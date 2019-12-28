@@ -1,6 +1,8 @@
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Main
 {
@@ -8,7 +10,7 @@ public class Main
     {
         ParamsFile params = new ParamsFile(new File("params.txt"));
         int port = params.getProxyPort();
-        String[] words = params.getWords();
+        ArrayList<String> words = new ArrayList<>(Arrays.asList(params.getWords()));
         String cachePath = params.getCachePath();
 
         System.out.println("Starting proxy on port " + port);
@@ -17,7 +19,6 @@ public class Main
         while (true)
         {
             new ProxyThread(serverSocket.accept(), words, cachePath);
-            System.out.println("Client connected!");
         }
     }
 }
