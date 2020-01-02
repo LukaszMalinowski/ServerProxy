@@ -32,27 +32,26 @@ public class ProxyThread extends Thread
     @Override
     public void run()
     {
-        StringBuilder reqBulider = new StringBuilder();
+        StringBuilder reqBuilder = new StringBuilder();
+
         while (inFromClient.hasNextLine())
         {
             String line = inFromClient.nextLine();
             if(line.equals(""))
                 break;
-            reqBulider.append(line);
-            reqBulider.append("\n");
+            reqBuilder.append(line);
+            reqBuilder.append("\n");
         }
-        String req = reqBulider.toString();
+        String req = reqBuilder.toString();
 
         requestParser = new RequestParser(req);
 
-        System.out.println("Old request:\n" + requestParser.getRequest());
-
         requestParser.parseUrl();
 
-        System.out.println("New request: \n" + requestParser.getRequest());
+        System.out.println(req);
 
         if(requestParser.getConnectionType().equals("CONNECT"))
-            System.out.println("Connect not implemented yet");
+            handleConnect();
         else
         {
             if(isCashed())
@@ -64,15 +63,12 @@ public class ProxyThread extends Thread
 
     void handleConnect()
     {
-        //TODO implement handling https connection
-
-        // Connect jakby informuje nas, że chce nawiązać połączenie na danym sockecie i potem go używać w przyszłości do pozostałych rządania
-        String lineConnecter = "HTTP/1.0 200 Connection established\r\n" +
-                "Proxy-Agent: ProxyServer/1.0\r\n" +
+        String lineConnecter = "HTTP/1.0 200 OK\r\n" +
                 "\r\n";
 
         try
         {
+            //wysyłam informacje do przeglądarki że mogę rozpocząć tunelowanie tcp
             outToClient.write(lineConnecter);
             outToClient.flush();
         } catch (IOException e)
@@ -82,6 +78,16 @@ public class ProxyThread extends Thread
 
         String host = requestParser.getHost();
         int port = requestParser.getPort();
+
+        try
+        {
+            Socket serverSocket = new Socket(host,port);
+            new TransferBytesThread(serverSocket,clientSocket).start();
+        }
+        catch (IOException ex)
+        {
+            ex.printStackTrace();
+        }
 
     }
 
