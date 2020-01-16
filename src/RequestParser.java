@@ -107,6 +107,15 @@ public class RequestParser
         request = request.substring(request.indexOf('\n') + 1);
 
         request = firstline + "\n" + request;
+
+        if(request.contains("Accept-Encoding:"))
+        {
+            String replaceLine = request.substring(
+                    request.indexOf("Accept-Encoding:"),
+                    request.indexOf("\n",request.indexOf("Accept-Encoding:")));
+
+            request = request.replace(replaceLine,"Accept-Encoding: identity");
+        }
     }
 
     public void setConnectionClose()

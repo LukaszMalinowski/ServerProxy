@@ -40,7 +40,7 @@ public class HttpHandler
         send();
 
 //        sendData();
-//        cachePage();
+        cachePage();
     }
 
     private void cachePage()

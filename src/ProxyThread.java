@@ -110,16 +110,12 @@ public class ProxyThread extends Thread
             Socket serverSocket = new Socket(requestParser.getHost(),requestParser.getPort());
             BufferedWriter outServer = new BufferedWriter(new OutputStreamWriter(serverSocket.getOutputStream()));
 
-//            System.out.println(requestParser.getRequest());
+            System.out.println(requestParser.getRequest());
             outServer.write(requestParser.getRequest() + "\r\n");
             outServer.flush();
 
+//            HttpHandlerr httpHandlerr = new HttpHandlerr(serverSocket, clientSocket);
             HttpHandler httpHandler = new HttpHandler(serverSocket, clientSocket, file, cachedFiles);
-
-            System.out.println("Headers:");
-            System.out.println(httpHandler.getHeaders());
-            System.out.println("Response:");
-            System.out.println(httpHandler.getResponse());
         } catch (IOException e)
         {
             e.printStackTrace();
@@ -138,11 +134,10 @@ public class ProxyThread extends Thread
             {
                 responseBuilder.append((char) read);
             }
-            System.out.println(responseBuilder.toString());
-            outToClient.write("HTTP/1.0 200 OK\r\n\r\n");
+            outToClient.write("HTTP/1.0 200 OK\r\n");
             outToClient.flush();
             outToClient.write(responseBuilder.toString());
-            outToClient.write("\r\n\r\n");
+            outToClient.write("\r\n");
             outToClient.flush();
             fileReader.close();
         }
