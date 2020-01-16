@@ -12,11 +12,12 @@ public class HttpHandler
 
     private File file;
     private List<File> cachedFiles;
+    private List<String> words;
 
-    String headers;
-    String response;
+    private String headers;
+    private String response;
 
-    public HttpHandler(Socket serverSocket, Socket clientSocket, File file, List<File> cachedFiles)
+    public HttpHandler(Socket serverSocket, Socket clientSocket, File file, List<File> cachedFiles, List<String> words)
     {
         this.clientSocket = clientSocket;
         this.serverSocket = serverSocket;
@@ -32,15 +33,23 @@ public class HttpHandler
 
         this.file = file;
         this.cachedFiles = cachedFiles;
+        this.words = words;
 
         //TODO wczytaj wszystko do jednego stringa
 
         initHeaders();
         initResponse();
-        send();
 
-//        sendData();
-        cachePage();
+        HTMLParser htmlParser = new HTMLParser(words);
+        System.out.println("response przed:\n" + response);
+        response = htmlParser.parseDangerousWords(response);
+        System.out.println("response po:\n" + response);
+    }
+
+    public void sendData()
+    {
+        send();
+//        cachePage();
     }
 
     private void cachePage()
@@ -49,7 +58,6 @@ public class HttpHandler
         {
             if (file.createNewFile())
             {
-                System.out.println("writing response to " + file + ":\n" + response);
                 FileWriter fileWriter = new FileWriter(file);
                 fileWriter.write(response);
                 fileWriter.close();
@@ -65,11 +73,9 @@ public class HttpHandler
     {
         try
         {
-            System.out.println("Sending headers:\n" + headers);
             clientWriter.write(headers);
             clientWriter.write("\r\n");
             clientWriter.flush();
-            System.out.println("Sending response:\n" + response);
             clientWriter.write(response);
             clientWriter.write("\n\r");
             clientWriter.flush();
@@ -78,34 +84,6 @@ public class HttpHandler
             ex.printStackTrace();
         }
     }
-//
-//    @Override
-//    public void run()
-//    {
-//        try
-//        {
-//            serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
-//            clientWriter = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-//        }
-//        catch (IOException e)
-//        {
-//            e.printStackTrace();
-//        }
-//
-//        try
-//        {
-//            clientWriter.write(headers);
-//            clientWriter.write("\r\n");
-//            clientWriter.flush();
-//            clientWriter.write(response);
-//            clientWriter.write("\r\n\r\n");
-//            clientWriter.flush();
-//        }
-//        catch (IOException ex)
-//        {
-//            System.err.println("Nie udalo sie wyslac");
-//        }
-//    }
 
     public String getHeaders()
     {
@@ -115,29 +93,6 @@ public class HttpHandler
     public String getResponse()
     {
         return response;
-    }
-
-    public void sendData()
-    {
-        //TODO sproboj odczytac dane
-        try
-        {
-            byte[] buffer = new byte[4096];
-            int read;
-            do {
-                read = serverSocket.getInputStream().read(buffer);
-                if (read > 0)
-                {
-                    clientSocket.getOutputStream().write(buffer, 0, read);
-
-                    clientSocket.getOutputStream().flush();
-                }
-            } while (read >= 0);
-        }
-        catch (IOException ex)
-        {
-            ex.printStackTrace();
-        }
     }
 
     private void initHeaders()

@@ -114,8 +114,8 @@ public class ProxyThread extends Thread
             outServer.write(requestParser.getRequest() + "\r\n");
             outServer.flush();
 
-//            HttpHandlerr httpHandlerr = new HttpHandlerr(serverSocket, clientSocket);
-            HttpHandler httpHandler = new HttpHandler(serverSocket, clientSocket, file, cachedFiles);
+            HttpHandler httpHandler = new HttpHandler(serverSocket, clientSocket, file, cachedFiles, words);
+            httpHandler.sendData();
         } catch (IOException e)
         {
             e.printStackTrace();
