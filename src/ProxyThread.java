@@ -1,25 +1,29 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.List;
 
 public class ProxyThread extends Thread
 {
     private Socket clientSocket;
-    private ArrayList<String> words;
+    private List<String> words;
     private String cachePath;
     private RequestParser requestParser;
-    private Scanner inFromClient;
+    private List<File> cachedFiles;
+
+    private BufferedReader inFromClient;
     private BufferedWriter outToClient;
 
-    ProxyThread(Socket clientSocket, ArrayList<String> words, String cachePath)
+    private final String CONNECT_TYPE = "CONNECT";
+
+    ProxyThread(Socket clientSocket, List<String> words, String cachePath, List<File> cachedFiles)
     {
         this.clientSocket = clientSocket;
         this.words = words;
         this.cachePath = cachePath;
+        this.cachedFiles = cachedFiles;
         try
         {
-            inFromClient = new Scanner(clientSocket.getInputStream());
+            inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             outToClient = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         }
         catch (IOException ex)
@@ -34,42 +38,50 @@ public class ProxyThread extends Thread
     {
         StringBuilder reqBuilder = new StringBuilder();
 
-        while (inFromClient.hasNextLine())
+        String line;
+        try
         {
-            String line = inFromClient.nextLine();
-            if(line.equals(""))
-                break;
-            reqBuilder.append(line);
-            reqBuilder.append("\n");
+            while (!(line = inFromClient.readLine()).equals(""))
+            {
+                reqBuilder.append(line);
+                reqBuilder.append("\n");
+            }
         }
-        String req = reqBuilder.toString();
+        catch (IOException ex)
+        {
+            ex.printStackTrace();
+        }
 
-        requestParser = new RequestParser(req);
+        requestParser = new RequestParser(reqBuilder.toString());
+
+        File file = new File(cachePath + "/" + requestParser.getFileName());
 
         requestParser.parseUrl();
+        requestParser.setConnectionClose();
 
-        System.out.println(req);
+//        System.out.println(requestParser.getRequest());
 
-        if(requestParser.getConnectionType().equals("CONNECT"))
+
+        if(requestParser.getConnectionType().equals(CONNECT_TYPE))
             handleConnect();
         else
         {
-            if(isCashed())
-                handleCached();
+            if(isCashed(file))
+                handleCached(file);
             else
-                handleNonCached();
+                handleNonCached(file);
         }
     }
 
     void handleConnect()
     {
-        String lineConnecter = "HTTP/1.0 200 OK\r\n" +
+        String lineConnector = "HTTP/1.0 200 OK\r\n" +
                 "\r\n";
 
         try
         {
             //wysyłam informacje do przeglądarki że mogę rozpocząć tunelowanie tcp
-            outToClient.write(lineConnecter);
+            outToClient.write(lineConnector);
             outToClient.flush();
         } catch (IOException e)
         {
@@ -82,7 +94,7 @@ public class ProxyThread extends Thread
         try
         {
             Socket serverSocket = new Socket(host,port);
-            new TransferBytesThread(serverSocket,clientSocket).start();
+            new TCPTunel(serverSocket, clientSocket).start();
         }
         catch (IOException ex)
         {
@@ -91,31 +103,66 @@ public class ProxyThread extends Thread
 
     }
 
-    void handleNonCached()
+    void handleNonCached(File file)
     {
         try
         {
             Socket serverSocket = new Socket(requestParser.getHost(),requestParser.getPort());
             BufferedWriter outServer = new BufferedWriter(new OutputStreamWriter(serverSocket.getOutputStream()));
+
+//            System.out.println(requestParser.getRequest());
             outServer.write(requestParser.getRequest() + "\r\n");
             outServer.flush();
 
-            TransferBytesThread bytesThread = new TransferBytesThread(serverSocket,clientSocket);
-            bytesThread.start();
+            HttpHandler httpHandler = new HttpHandler(serverSocket, clientSocket, file, cachedFiles);
+
+            System.out.println("Headers:");
+            System.out.println(httpHandler.getHeaders());
+            System.out.println("Response:");
+            System.out.println(httpHandler.getResponse());
         } catch (IOException e)
         {
             e.printStackTrace();
         }
     }
 
-    void handleCached()
+    void handleCached(File file)
     {
-        //TODO implement sending cached file
+        System.out.println("handle cached " + file);
+        try
+        {
+            FileReader fileReader = new FileReader(file);
+            int read;
+            StringBuilder responseBuilder = new StringBuilder();
+            while ((read = fileReader.read()) >= 0)
+            {
+                responseBuilder.append((char) read);
+            }
+            System.out.println(responseBuilder.toString());
+            outToClient.write("HTTP/1.0 200 OK\r\n\r\n");
+            outToClient.flush();
+            outToClient.write(responseBuilder.toString());
+            outToClient.write("\r\n\r\n");
+            outToClient.flush();
+            fileReader.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
-    boolean isCashed()
+    boolean isCashed(File cached)
     {
-        //TODO check if file is cached
+        if (!cached.exists())
+            return false;
+
+        for (File file : cachedFiles)
+        {
+            if(file.getPath().equals(cached.getPath()))
+                return true;
+        }
+
         return false;
     }
 }

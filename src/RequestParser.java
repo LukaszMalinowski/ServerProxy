@@ -27,11 +27,25 @@ public class RequestParser
 
         //sprawdzamy czy nazwa hosta posiada numer portu na końcu, jeśli tak to ucinamy
         if(host.contains(":"))
-        {
             host = host.substring(0, host.indexOf(':'));
-        }
 
         return host;
+    }
+
+    public String getFileName()
+    {
+        String fileName = request.substring(request.indexOf(' ') + 1,
+                request.indexOf(' ', request.indexOf(' ') + 1));
+
+        if(fileName.contains("http://"))
+            fileName = fileName.substring(7);
+
+        if(fileName.contains(":"))
+            fileName = fileName.substring(0, fileName.indexOf(':'));
+
+        fileName = fileName.replace('/', '_');
+
+        return fileName;
     }
 
     public String getUrl()
@@ -45,9 +59,8 @@ public class RequestParser
             url = url.substring(7);
 
         if(url.indexOf('/') != -1)
-        {
             url = url.substring(url.indexOf('/'));
-        }
+
 
         else
             url = "/";
@@ -83,7 +96,7 @@ public class RequestParser
         return host;
     }
 
-    void parseUrl()
+    public void parseUrl()
     {
         String firstline = request.substring(0, request.indexOf('\n'));
 
@@ -91,8 +104,14 @@ public class RequestParser
                 firstline.substring(firstline.indexOf(' ') + 1, firstline.lastIndexOf(' ')),
                 this.getUrl());
 
-        request = request.substring(request.indexOf('\n')+1);
+        request = request.substring(request.indexOf('\n') + 1);
 
         request = firstline + "\n" + request;
+    }
+
+    public void setConnectionClose()
+    {
+        if(request.contains("Connection: keep-alive"))
+            request = request.replace("Connection: keep-alive" , "Connection: close");
     }
 }
