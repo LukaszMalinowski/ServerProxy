@@ -4,6 +4,8 @@ import java.util.regex.Pattern;
 public class RequestParser
 {
     private String request;
+
+    //Regex ktory wyciaga linijke z hostem
     private Pattern hostPattern = Pattern.compile("Host: (.*)");
 
     RequestParser(String request)
@@ -18,6 +20,7 @@ public class RequestParser
 
     public String getConnectionType()
     {
+        //Ucinamy pierwsza linijke requesta
         return request.substring(0,request.indexOf(' '));
     }
 
@@ -34,6 +37,7 @@ public class RequestParser
 
     public String getFileName()
     {
+        //TODO jesli ostatnim znakiem jest '/' to dodaj rozszerzenie .html do pliku i zamien wszystkie kropki na cos innego (oprocz ostatniej)
         String fileName = request.substring(request.indexOf(' ') + 1,
                 request.indexOf(' ', request.indexOf(' ') + 1));
 
@@ -50,6 +54,7 @@ public class RequestParser
 
     public String getUrl()
     {
+        //ucinamy url od pierwszego '/', jesli nie znajdziemy znaku '/' to url zmieniamy na '/'
         String url = "";
         url = request.substring(0, request.indexOf('\n'));
 
@@ -60,8 +65,6 @@ public class RequestParser
 
         if(url.indexOf('/') != -1)
             url = url.substring(url.indexOf('/'));
-
-
         else
             url = "/";
 
@@ -70,6 +73,7 @@ public class RequestParser
 
     public int getPort()
     {
+        //jesli w nazwie hosta znajdziemy port, zwaramy go, w przeciwnym wypadku port to 80
         String host = getHostWithPort();
         int port = 80;
 
@@ -81,6 +85,7 @@ public class RequestParser
 
     private String getHostWithPort()
     {
+        //zwracamy nazwe hosta z portem na koncu (jesli wystepuje)
         String host = "";
         Matcher hostMatcher = hostPattern.matcher(request);
 
@@ -98,6 +103,7 @@ public class RequestParser
 
     public void parseUrl()
     {
+        //Zmieniamy pierwsza linijke requesta oraz zmieniamy kodowanie
         String firstline = request.substring(0, request.indexOf('\n'));
 
         firstline = firstline.replace(
@@ -108,6 +114,18 @@ public class RequestParser
 
         request = firstline + "\n" + request;
 
+        setConnectionClose();
+        setAcceptEncoding();
+    }
+
+    private void setConnectionClose()
+    {
+        if(request.contains("Connection: keep-alive"))
+            request = request.replace("Connection: keep-alive" , "Connection: close");
+    }
+
+    private void setAcceptEncoding()
+    {
         if(request.contains("Accept-Encoding:"))
         {
             String replaceLine = request.substring(
@@ -116,11 +134,5 @@ public class RequestParser
 
             request = request.replace(replaceLine,"Accept-Encoding: identity");
         }
-    }
-
-    public void setConnectionClose()
-    {
-        if(request.contains("Connection: keep-alive"))
-            request = request.replace("Connection: keep-alive" , "Connection: close");
     }
 }

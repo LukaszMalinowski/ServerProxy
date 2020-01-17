@@ -9,15 +9,17 @@ public class Main
 {
     public static void main(String[] args) throws IOException
     {
+        //TODO Zmien na args[0]
         ParamsFile params = new ParamsFile(new File("params.txt"));
         int port = params.getProxyPort();
-        List<String> words = new ArrayList<>(Arrays.asList(params.getWords()));
         String cachePath = params.getCachePath();
+        List<String> words = new ArrayList<>(Arrays.asList(params.getWords()));
         List<File> cachedFiles = getCachedFiles(cachePath);
 
         System.out.println("Starting proxy on port " + port);
         ServerSocket serverSocket = new ServerSocket(port);
 
+        //Czekamy na polaczenie z przegladarki i po polaczeniu tworzymy nowy watek z podanymi parametrami
         while (true)
         {
             new ProxyThread(serverSocket.accept(), words, cachePath, cachedFiles);

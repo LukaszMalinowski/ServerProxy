@@ -4,56 +4,47 @@ import java.util.List;
 
 public class HttpHandler
 {
-    private Socket clientSocket;
-    private Socket serverSocket;
 
     private BufferedReader serverReader;
     private BufferedWriter clientWriter;
 
     private File file;
     private List<File> cachedFiles;
-    private List<String> words;
 
     private String headers;
     private String response;
 
     public HttpHandler(Socket serverSocket, Socket clientSocket, File file, List<File> cachedFiles, List<String> words)
     {
-        this.clientSocket = clientSocket;
-        this.serverSocket = serverSocket;
-
         try
         {
             this.serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
             this.clientWriter = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-        } catch (IOException ex)
+        }
+        catch (IOException ex)
         {
             ex.printStackTrace();
         }
 
         this.file = file;
         this.cachedFiles = cachedFiles;
-        this.words = words;
-
-        //TODO wczytaj wszystko do jednego stringa
 
         initHeaders();
         initResponse();
 
         HTMLParser htmlParser = new HTMLParser(words);
-        System.out.println("response przed:\n" + response);
         response = htmlParser.parseDangerousWords(response);
-        System.out.println("response po:\n" + response);
     }
 
     public void sendData()
     {
         send();
-//        cachePage();
+        cachePage();
     }
 
     private void cachePage()
     {
+        //Zapisujemy tresc do pliku
         try
         {
             if (file.createNewFile())
@@ -71,6 +62,7 @@ public class HttpHandler
 
     private void send()
     {
+        //Wysylamy naglowki i cialo odpowiedzi do przegladarki
         try
         {
             clientWriter.write(headers);
@@ -85,19 +77,9 @@ public class HttpHandler
         }
     }
 
-    public String getHeaders()
-    {
-        return headers;
-    }
-
-    public String getResponse()
-    {
-        return response;
-    }
-
     private void initHeaders()
     {
-        //TODO przeczytaj tutaj readlinem
+        //Czytamy az do wystapienia pierwszej pustej linii i zapisujemy wszystkie naglowki do zmiennej
         StringBuilder headersBulider = new StringBuilder();
         try
         {
@@ -117,7 +99,7 @@ public class HttpHandler
 
     private void initResponse()
     {
-        //TODO tutaj zostaw
+        //Czytamy reszte i zapisujemy body odpowiedzi
         int character;
         StringBuilder responseBuilder = new StringBuilder();
         try

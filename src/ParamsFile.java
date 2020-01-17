@@ -12,6 +12,7 @@ public class ParamsFile
 
     int getProxyPort()
     {
+        //Czytamy pierwsza linie pliku i wyciagamy numer portu
         int port;
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
@@ -28,6 +29,7 @@ public class ParamsFile
 
     String[] getWords()
     {
+        //Czytamy druga linie pliku i wyciagamy slowa
         String wordsLine = "";
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
@@ -44,6 +46,7 @@ public class ParamsFile
 
     String getCachePath()
     {
+        //Czytamy trzecia linie pliku i wyciagamy lokalizacje plikow do cachowania
         String path = "";
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
@@ -56,6 +59,11 @@ public class ParamsFile
         {
             ex.printStackTrace();
         }
+        File file = new File(path);
+
+        if (!file.exists())
+            file.mkdir();
+
         return path;
     }
 }
