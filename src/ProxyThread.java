@@ -64,6 +64,8 @@ public class ProxyThread extends Thread
 
         requestParser.parseUrl();
 
+        System.out.println(requestParser.getHost());
+
         if(requestParser.getConnectionType().equals(CONNECT_TYPE))
             handleConnect();
         else
@@ -112,7 +114,7 @@ public class ProxyThread extends Thread
         try
         {
             //Tworzymy polaczenie z serwerem docelowym i wysylamy mu zparsowany request z przegladarki
-            Socket serverSocket = new Socket(requestParser.getHost(),requestParser.getPort());
+            Socket serverSocket = new Socket(requestParser.getHost(), requestParser.getPort());
             BufferedWriter serverWriter = new BufferedWriter(new OutputStreamWriter(serverSocket.getOutputStream()));
 
             serverWriter.write(requestParser.getRequest() + "\r\n");

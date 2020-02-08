@@ -9,8 +9,11 @@ public class Main
 {
     public static void main(String[] args) throws IOException
     {
-        //TODO Zmien na args[0]
-        ParamsFile params = new ParamsFile(new File("params.txt"));
+        String pathName = "params.txt";
+        if(args.length != 0)
+            pathName = args[0];
+
+        ParamsFile params = new ParamsFile(new File(pathName));
         int port = params.getProxyPort();
         String cachePath = params.getCachePath();
         List<String> words = new ArrayList<>(Arrays.asList(params.getWords()));
@@ -29,6 +32,9 @@ public class Main
     private static List<File> getCachedFiles(String cachePath)
     {
         File cacheDir = new File(cachePath);
-        return Arrays.asList(cacheDir.listFiles());
+        if(cacheDir.listFiles() == null)
+            return new ArrayList<>();
+        else
+            return Arrays.asList(cacheDir.listFiles());
     }
 }

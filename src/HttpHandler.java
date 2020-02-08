@@ -54,7 +54,8 @@ public class HttpHandler
                 fileWriter.close();
                 cachedFiles.add(file);
             }
-        } catch (IOException ex)
+        }
+        catch (IOException ex)
         {
             ex.printStackTrace();
         }
